@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="12118" systemVersion="16F73" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+    <device id="retina4_7" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="12086"/>
+        <capability name="Constraints with non-1.0 multipliers" minToolsVersion="5.1"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--View Controller-->
+        <scene sceneID="tne-QT-ifu">
+            <objects>
+                <viewController id="BYZ-38-t0r" customClass="ViewController" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="y3c-jy-aDJ"/>
+                        <viewControllerLayoutGuide type="bottom" id="wfy-db-euE"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="PgE-fR-du9" customClass="VodPlayerView">
+                                <rect key="frame" x="0.0" y="0.0" width="375" height="333.5"/>
+                                <subviews>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="cof-W7-X9I">
+                                        <rect key="frame" x="137" y="116" width="100" height="100"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="100" id="HC8-YS-iIH"/>
+                                            <constraint firstAttribute="width" constant="100" id="hCv-rS-Zmh"/>
+                                        </constraints>
+                                        <state key="normal" title="Button" image="play-button.png"/>
+                                        <state key="selected" image="pause.png"/>
+                                        <connections>
+                                            <action selector="playPauseButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="D4y-Jc-6pg"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                                <color key="backgroundColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
+                                <constraints>
+                                    <constraint firstItem="cof-W7-X9I" firstAttribute="centerY" secondItem="PgE-fR-du9" secondAttribute="centerY" id="0gd-KR-fNL"/>
+                                    <constraint firstItem="cof-W7-X9I" firstAttribute="centerX" secondItem="PgE-fR-du9" secondAttribute="centerX" id="Ls1-aX-XN0"/>
+                                </constraints>
+                            </view>
+                        </subviews>
+                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="PgE-fR-du9" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" id="1w8-DP-scC"/>
+                            <constraint firstItem="wfy-db-euE" firstAttribute="top" secondItem="PgE-fR-du9" secondAttribute="bottom" multiplier="2" id="IZo-jY-Iyq"/>
+                            <constraint firstItem="PgE-fR-du9" firstAttribute="top" secondItem="8bC-Xf-vdC" secondAttribute="top" id="mkx-h8-moO"/>
+                            <constraint firstAttribute="trailing" secondItem="PgE-fR-du9" secondAttribute="trailing" id="mzM-tY-cOp"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="playPauseButton" destination="cof-W7-X9I" id="06r-Sy-RgJ"/>
+                        <outlet property="playerView" destination="PgE-fR-du9" id="RW6-50-jNs"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="117.59999999999999" y="122.78860569715144"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="pause.png" width="512" height="512"/>
+        <image name="play-button.png" width="512" height="512"/>
+    </resources>
+</document>
