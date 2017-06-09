@@ -14,7 +14,7 @@
 @interface VodPlayer : NSObject
 
 @property (nonatomic, weak) id<VodPlayerDelegate> delegate;
-@property (nonatomic, weak) NSURL *sampleURL;
+@property (nonatomic, copy) NSURL *sampleURL;
 
 - (AVPlayer *)player;
 - (void)loadPlayer:(void (^)(BOOL isLoadPlayer))result;

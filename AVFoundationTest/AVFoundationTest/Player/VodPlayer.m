@@ -11,7 +11,7 @@
 
 static const NSString *ItemStatusContext;
 
-//#define VOD_SAMPLE	@"http://www.ithinknext.com/mydata/board/files/F201308021823010.mp4"
+// #define VOD_SAMPLE @"http://www.ithinknext.com/mydata/board/files/F201308021823010.mp4
 #define VOD_SAMPLE  @"http://devimages.apple.com/iphone/samples/bipbop/bipbopall.m3u8"
 
 @interface VodPlayer ()
@@ -22,7 +22,9 @@ static const NSString *ItemStatusContext;
 @implementation VodPlayer {
 	
 	BOOL isLocalFile_;
+	
 	AVPlayer *avPlayer_;
+	AVURLAsset *urlAsset_;
 }
 
 - (instancetype)init
@@ -31,9 +33,8 @@ static const NSString *ItemStatusContext;
 		isLocalFile_ = NO;
 		
 		self.sampleURL = [[NSBundle mainBundle] URLForResource:@"SampleVideo" withExtension:@"mp4"];
-		// self.sampleURL = [NSURL URLWithString:VOD_SAMPLE];
+		//self.sampleURL = [NSURL URLWithString:VOD_SAMPLE];
 	}
-	
 	return self;
 }
 
@@ -55,33 +56,26 @@ static const NSString *ItemStatusContext;
 	 */
 	
 	__block BOOL isLoadPlayer = NO;
-	[self initAssetWithLocalFile:^(BOOL isLocalFileLoad) {
+	[self initAsset:^(BOOL isLocalFileLoad) {
 		
-		if (!isLocalFileLoad) {
-			[self initAssetWithURL];
+		if ([self makePlayerItem]) {
+			isLoadPlayer = [self initPlayer];
+			result(isLoadPlayer);
 		}
 		
-		isLoadPlayer = [self initPlayer];
-		result(isLoadPlayer);
+		result(NO);
 	}];
 }
 
-- (void)initAssetWithLocalFile:(void (^)(BOOL isLocalFileLoad))result
+- (void)initAsset:(void (^)(BOOL isLocalFileLoad))result
 {
-	self.playerItem = [AVPlayerItem playerItemWithURL:self.sampleURL];
-	
-	if (self.playerItem == nil) {
-		result(NO);
-		return;
-	}
-	
-	AVURLAsset *urlAsset = [[AVURLAsset alloc] initWithURL:self.sampleURL options:nil];
+	urlAsset_ = [[AVURLAsset alloc] initWithURL:self.sampleURL options:nil];
 	NSArray *keys = @[@"tracks"];
-	[urlAsset loadValuesAsynchronouslyForKeys:keys completionHandler:^{
+	[urlAsset_ loadValuesAsynchronouslyForKeys:keys completionHandler:^{
 		
 		NSError *error = nil;
-		AVKeyValueStatus trackStatus = [urlAsset statusOfValueForKey:@"tracks"
-															   error:&error];
+		AVKeyValueStatus trackStatus = [urlAsset_ statusOfValueForKey:@"tracks"
+																error:&error];
 		switch (trackStatus) {
 			case AVKeyValueStatusLoaded:
 				NSLog(@"AVKeyValueStatusLoaded");
@@ -102,10 +96,30 @@ static const NSString *ItemStatusContext;
 	}];
 }
 
+- (BOOL)makePlayerItem
+{
+	isLocalFile_ = [self.sampleURL isFileURL];
+	
+	if (isLocalFile_) {
+		self.playerItem = [AVPlayerItem playerItemWithAsset:urlAsset_];
+	} else {
+		self.playerItem = [AVPlayerItem playerItemWithURL:self.sampleURL];
+	}
+	
+	[self.playerItem addObserver:self forKeyPath:@"status" options:0 context:&ItemStatusContext];
+	
+	return (self.playerItem != nil);
+}
+
 - (void)initAssetWithURL
 {
 	self.playerItem = [AVPlayerItem playerItemWithURL:self.sampleURL];
-	[self.playerItem addObserver:self forKeyPath:@"status" options:0 context:&ItemStatusContext];
+	
+	if (self.playerItem == nil) {
+		return;
+	}
+
+	
 }
 
 - (BOOL)initPlayer
