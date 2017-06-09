@@ -118,8 +118,6 @@ static const NSString *ItemStatusContext;
 	if (self.playerItem == nil) {
 		return;
 	}
-
-	
 }
 
 - (BOOL)initPlayer
