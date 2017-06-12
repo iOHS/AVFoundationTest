@@ -15,6 +15,7 @@
 
 @property (nonatomic, weak) id<VodPlayerDelegate> delegate;
 @property (nonatomic, copy) NSURL *sampleURL;
+@property (nonatomic, assign) BOOL ispreloadAssetProperty;
 
 - (AVPlayer *)player;
 - (void)loadPlayer:(void (^)(BOOL isLoadPlayer))result;
@@ -25,6 +26,9 @@
 
 @protocol VodPlayerDelegate <NSObject>
 
-- (void)readyToPlay:(BOOL)isReadyToPlay;
+- (void)readyToPlay:(BOOL)isReadyToPlay duration:(Float64)duration;
+- (void)didPlayReachEnd;
+
+- (void)updatePlayTime:(Float64)playTime;
 
 @end
