@@ -21,6 +21,7 @@
 - (void)loadPlayer:(void (^)(BOOL isLoadPlayer))result;
 - (void)play;
 - (void)pause;
+- (BOOL)isPlaying;
 
 @end
 
@@ -29,6 +30,6 @@
 - (void)readyToPlay:(BOOL)isReadyToPlay duration:(Float64)duration;
 - (void)didPlayReachEnd;
 
-- (void)updatePlayTime:(Float64)playTime;
+- (void)updatePlayTime:(Float64)playTime isPlaying:(BOOL)isPlaying;
 
 @end

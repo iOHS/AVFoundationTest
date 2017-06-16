@@ -165,8 +165,11 @@ static const NSString *PlayerItemContext;
 		playTimeObserver_ = [avPlayer_ addPeriodicTimeObserverForInterval:interval
 																	queue:NULL usingBlock:^(CMTime time) {
 																		
-																		if ([vodPlayerObject.delegate respondsToSelector:@selector(updatePlayTime:)]) {
-																			[vodPlayerObject.delegate updatePlayTime:CMTimeGetSeconds(time)];
+																		
+																		NSLog(@"isPlaying : %d", [vodPlayerObject isPlaying]);
+																		
+																		if ([vodPlayerObject.delegate respondsToSelector:@selector(updatePlayTime:isPlaying:)]) {
+																			[vodPlayerObject.delegate updatePlayTime:CMTimeGetSeconds(time) isPlaying:[vodPlayerObject isPlaying]];
 																		}
 																	}];
 	}
@@ -202,6 +205,15 @@ static const NSString *PlayerItemContext;
 - (AVPlayer *)player
 {
 	return avPlayer_;
+}
+
+- (BOOL)isPlaying
+{
+	if (avPlayer_ != nil) {
+		return (avPlayer_.rate > 0.0);
+	}
+	
+	return NO;
 }
 
 - (void)resetPlayer

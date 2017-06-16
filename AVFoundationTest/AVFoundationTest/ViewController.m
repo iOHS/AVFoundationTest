@@ -47,10 +47,18 @@
 		}
 	}];
 }
-
+\
 - (IBAction)playPauseButton:(id)sender
 {
-	[player_ play];
+	if (player_ == nil) {
+		return;
+	}
+	
+	if ([player_ isPlaying]) {
+		[player_ pause];
+	} else {
+		[player_ play];
+	}
 }
 
 - (IBAction)playerViewTapGesture:(id)sender
@@ -86,13 +94,15 @@
 	[self.playSlider setValue:0.0f];
 }
 
-- (void)updatePlayTime:(Float64)playTime
+- (void)updatePlayTime:(Float64)playTime isPlaying:(BOOL)isPlaying
 {
 	if (duration_ > 0) {
 		self.playSlider.value = playTime / duration_;
 	} else {
 		self.playSlider.value = 0.0f;
 	}
+	
+	self.playPauseButton.selected = isPlaying;
 }
 
 @end
