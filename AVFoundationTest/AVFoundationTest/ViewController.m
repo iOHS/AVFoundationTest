@@ -8,12 +8,17 @@
 
 #import "ViewController.h"
 #import "VodPlayerView.h"
+#import "Util.h"
+
+#define RESET_PLAYTIME_STRING	@"00:00:00"
 
 @interface ViewController ()
 
 @property (weak, nonatomic) IBOutlet VodPlayerView *playerView;
 @property (weak, nonatomic) IBOutlet UIButton *playPauseButton;
 @property (weak, nonatomic) IBOutlet UISlider *playSlider;
+@property (weak, nonatomic) IBOutlet UILabel *currentPlayTime;
+@property (weak, nonatomic) IBOutlet UILabel *totalPlayTime;
 
 @end
 
@@ -47,17 +52,36 @@
 		}
 	}];
 }
-\
+
 - (IBAction)playPauseButton:(id)sender
 {
 	if (player_ == nil) {
 		return;
 	}
 	
-	if ([player_ isPlaying]) {
+	if ([player_ isVodPlaying]) {
 		[player_ pause];
 	} else {
 		[player_ play];
+	}
+	
+	[self performSelector:@selector(togglePlayPauseButton) withObject:nil afterDelay:2.0];
+}
+- (IBAction)valueChangeSeek:(id)sender
+{
+	
+}
+
+- (IBAction)seekCompleteVodPlay:(UISlider *)sender
+{
+	if (player_ != nil) {
+		
+		Float64 duration = [player_ duration];
+		
+		if (duration > 0.0f && [player_ isVodPlaying]) {
+			CGFloat seekPlayTime = sender.value * duration;
+			[player_ seekToTime:seekPlayTime];
+		}
 	}
 }
 
@@ -70,7 +94,7 @@
 {
 	BOOL isHidden = (self.playPauseButton.alpha == 0.0);
 	
-	[UIView animateWithDuration:1.0f animations:^{
+	[UIView animateWithDuration:0.2f animations:^{
 		
 		if (isHidden) {
 			self.playPauseButton.alpha = 1.0f;
@@ -80,29 +104,57 @@
 	}];
 }
 
+- (void)changedPlayPauseButtonStatus:(BOOL)isPlaying
+{
+	[self.playPauseButton setSelected:isPlaying];
+}
+
+- (void)resetVodPlayer
+{
+	[self changedPlayPauseButtonStatus:NO];
+	[self.playSlider setValue:0.0f];
+	[self.currentPlayTime setText:RESET_PLAYTIME_STRING];
+	[self.totalPlayTime setText:RESET_PLAYTIME_STRING];
+}
+
 #pragma mark - VodPlayerDelegate
 
 - (void)readyToPlay:(BOOL)isReadyToPlay duration:(Float64)duration
 {
 	_playPauseButton.enabled = isReadyToPlay;
 	duration_ = duration;
+	
+	self.totalPlayTime.text = [Util timeFormatted:duration];
+}
+
+- (void)updatePlayTime:(Float64)playTime
+{
+	dispatch_async(dispatch_get_main_queue(), ^{
+		
+		if (duration_ > 0) {
+			self.playSlider.value = playTime / duration_;
+		} else {
+			self.playSlider.value = 0.0f;
+		}
+		
+		self.currentPlayTime.text = [Util timeFormatted:playTime];
+	});
+}
+
+- (void)changedPlayStatus:(VodPlayStatus)status
+{
+	[self changedPlayPauseButtonStatus:(status == VodPlayStatus_Playing)];
 }
 
 - (void)didPlayReachEnd
 {
-	[self.playPauseButton setSelected:NO];
-	[self.playSlider setValue:0.0f];
+	[self resetVodPlayer];
 }
 
-- (void)updatePlayTime:(Float64)playTime isPlaying:(BOOL)isPlaying
+- (void)failVodPlayerWithErrorType:(VodErrorType)errorType
 {
-	if (duration_ > 0) {
-		self.playSlider.value = playTime / duration_;
-	} else {
-		self.playSlider.value = 0.0f;
-	}
-	
-	self.playPauseButton.selected = isPlaying;
+	[self resetVodPlayer];
+	NSLog(@"%zd", errorType);
 }
 
 @end

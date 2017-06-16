@@ -11,11 +11,20 @@
 
 static const NSString *PlayerItemContext;
 
+// Sample URL
 #define VOD_SAMPLE @"http://www.ithinknext.com/mydata/board/files/F201308021823010.mp4"
 // #define VOD_SAMPLE  @"http://devimages.apple.com/iphone/samples/bipbop/bipbopall.m3u8"
 
+// Define
+#define KEY_TRACKS				@"tracks"
+#define KEY_RATE				@"rate"
+#define KEY_STATUS				@"status"
+#define KEY_PLAYABLE			@"playable"
+#define KEY_HASPROTECTEDCONTENT @"hasProtectedContent"
+
 @interface VodPlayer ()
-@property (nonatomic) AVPlayerItem *playerItem;
+
+@property (nonatomic, assign) VodPlayStatus playStatus;
 
 @end
 
@@ -24,8 +33,10 @@ static const NSString *PlayerItemContext;
 	BOOL isLocalFile_;
 	
 	BOOL isInitPlayer_;
+	
 	AVPlayer *avPlayer_;
 	AVAsset *asset_;
+	AVPlayerItem *playerItem_;
 	
 	id playTimeObserver_;
 }
@@ -41,12 +52,19 @@ static const NSString *PlayerItemContext;
 		// NOTE : 이어폰에서는 소리가 나는데, 단말스피커에서 소리가 나지 않아 추가했더니 소리 남. 확인할것! (170612)
 		[[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
 		[[AVAudioSession sharedInstance] setActive:YES error: nil];
-
+		
 		
 		// self.sampleURL = [[NSBundle mainBundle] URLForResource:@"SampleVideo" withExtension:@"mp4"];
 		self.sampleURL = [NSURL URLWithString:VOD_SAMPLE];
 	}
 	return self;
+}
+
+#pragma mark - Public function
+
+- (AVPlayer *)player
+{
+	return avPlayer_;
 }
 
 - (void)loadPlayer:(void (^)(BOOL isLoadPlayer))result
@@ -78,15 +96,71 @@ static const NSString *PlayerItemContext;
 	}];
 }
 
+- (void)play
+{
+	if (avPlayer_ != nil) {
+		[avPlayer_ play];
+	}
+}
+
+- (void)pause
+{
+	if (avPlayer_ != nil) {
+		[avPlayer_ pause];
+	}
+}
+
+- (void)seekToTime:(Float64)seconds
+{
+	if (avPlayer_ != nil) {
+		
+		CGFloat seekSeconds = roundf(seconds);
+		CMTime time = CMTimeMakeWithSeconds(seekSeconds, 1);
+		[avPlayer_ seekToTime:time
+			completionHandler:^(BOOL finished)
+		 {
+			 dispatch_async(dispatch_get_main_queue(), ^{
+				 //				 isSeeking = NO;
+				 //				 // Do some stuff
+			 });
+		 }];
+	}
+}
+
+- (void)setPlayStatus:(VodPlayStatus)playStatus
+{
+	_playStatus = playStatus;
+	
+	if ([self.delegate respondsToSelector:@selector(changedPlayStatus:)]) {
+		[self.delegate changedPlayStatus:playStatus];
+	}
+}
+
+- (BOOL)isVodPlaying
+{
+	return (avPlayer_ != nil && avPlayer_.rate > 0.0);
+}
+
+- (Float64)duration
+{
+	if (avPlayer_ != nil) {
+		return CMTimeGetSeconds(avPlayer_.currentItem.duration);
+	}
+	
+	return 0.0f;
+}
+
+#pragma mark - Private function
+
 - (void)initAsset:(void (^)(BOOL isLoaded))result
 {
 	// urlAsset_ = [[AVURLAsset alloc] initWithURL:self.sampleURL options:nil];
 	asset_ = [AVAsset assetWithURL:self.sampleURL];
-	NSArray *keys = @[@"tracks"];
+	NSArray *keys = @[KEY_TRACKS];
 	[asset_ loadValuesAsynchronouslyForKeys:keys completionHandler:^{
 		
 		NSError *error = nil;
-		AVKeyValueStatus trackStatus = [asset_ statusOfValueForKey:@"tracks"
+		AVKeyValueStatus trackStatus = [asset_ statusOfValueForKey:KEY_TRACKS
 																error:&error];
 		switch (trackStatus) {
 			case AVKeyValueStatusLoaded:
@@ -123,37 +197,66 @@ static const NSString *PlayerItemContext;
 		 * https://developer.apple.com/documentation/avfoundation/avplayeritem?language=objc - Overview
 		 */
 		
-		NSArray *assetKeys = @[@"playable", @"hasProtectedContent"];
+		NSArray *assetKeys = @[KEY_PLAYABLE, KEY_HASPROTECTEDCONTENT];
 		
-		self.playerItem = [AVPlayerItem playerItemWithAsset:asset_ automaticallyLoadedAssetKeys:assetKeys];
+		playerItem_ = [AVPlayerItem playerItemWithAsset:asset_ automaticallyLoadedAssetKeys:assetKeys];
+		
+		__block BOOL isCheckLoad = YES;
+		
+		[asset_ loadValuesAsynchronouslyForKeys:assetKeys completionHandler:^(void) {
+			dispatch_async(dispatch_get_main_queue(), ^(void) {
+				
+				if (asset_.isPlayable == NO) {
+					
+					isCheckLoad = NO;
+					[self errorVodPlayer:VodErrorType_CannotPlay];
+					
+				} else if (asset_.hasProtectedContent) {
+					
+					isCheckLoad = NO;
+					[self errorVodPlayer:VodErrorType_ProtectedContent];
+				}
+			});
+		}];
+		
+		if (isCheckLoad == NO) {
+			return NO;
+		}
 		
 	} else {
 		
 		if (isLocalFile_) {
-			self.playerItem = [AVPlayerItem playerItemWithAsset:asset_];
+			playerItem_ = [AVPlayerItem playerItemWithAsset:asset_];
 		} else {
-			self.playerItem = [AVPlayerItem playerItemWithURL:self.sampleURL];
+			playerItem_ = [AVPlayerItem playerItemWithURL:self.sampleURL];
 		}
 	}
 	
-	if (self.playerItem == nil) {
+	if (playerItem_ == nil) {
+		[self errorVodPlayer:VodErrorType_EmptyPlayerItem];
 		return NO;
 	}
 	
 	// Register as an observer of the player item's status property
 	NSKeyValueObservingOptions options = NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew;
-	[self.playerItem addObserver:self
-					  forKeyPath:@"status"
-						 options:options
-						 context:&PlayerItemContext];
+	[playerItem_ addObserver:self
+				  forKeyPath:KEY_STATUS
+					 options:options
+					 context:&PlayerItemContext];
 	
 	// Associate the player item with the player
-	avPlayer_ = [AVPlayer playerWithPlayerItem:self.playerItem];
+	avPlayer_ = [AVPlayer playerWithPlayerItem:playerItem_];
 	
+	if (avPlayer_ == nil) {
+		[self errorVodPlayer:VodErrorType_InitPlayerFail];
+		return NO;
+	}
 	
 	if (isInitPlayer_ == NO) {
 		
 		isInitPlayer_ = YES;
+		
+		[avPlayer_ addObserver:self forKeyPath:KEY_RATE options:NSKeyValueObservingOptionNew context:&PlayerItemContext];
 		
 		[[NSNotificationCenter defaultCenter] addObserver:self
 												 selector:@selector(playerItemDidReachEnd:)
@@ -163,57 +266,17 @@ static const NSString *PlayerItemContext;
 		__block VodPlayer *vodPlayerObject = self;
 		CMTime interval = CMTimeMakeWithSeconds(1.0, NSEC_PER_SEC); // 1 second
 		playTimeObserver_ = [avPlayer_ addPeriodicTimeObserverForInterval:interval
-																	queue:NULL usingBlock:^(CMTime time) {
-																		
-																		
-																		NSLog(@"isPlaying : %d", [vodPlayerObject isPlaying]);
-																		
-																		if ([vodPlayerObject.delegate respondsToSelector:@selector(updatePlayTime:isPlaying:)]) {
-																			[vodPlayerObject.delegate updatePlayTime:CMTimeGetSeconds(time) isPlaying:[vodPlayerObject isPlaying]];
-																		}
-																	}];
+																	queue:dispatch_get_main_queue()
+															   usingBlock:^(CMTime time) {
+																   
+																   if ([vodPlayerObject.delegate respondsToSelector:@selector(updatePlayTime:)]) {
+																	   [vodPlayerObject.delegate updatePlayTime:CMTimeGetSeconds(time)];
+																   }
+															   }];
 	}
 	
 	
 	return YES;
-}
-
-- (void)initAssetWithURL
-{
-	self.playerItem = [AVPlayerItem playerItemWithURL:self.sampleURL];
-	
-	if (self.playerItem == nil) {
-		return;
-	}
-}
-
-- (void)play
-{
-	if (avPlayer_ != nil) {
-		[avPlayer_ play];
-	}
-}
-
-- (void)pause
-{
-	if (avPlayer_ != nil) {
-		[avPlayer_ pause];
-	}
-}
-
-
-- (AVPlayer *)player
-{
-	return avPlayer_;
-}
-
-- (BOOL)isPlaying
-{
-	if (avPlayer_ != nil) {
-		return (avPlayer_.rate > 0.0);
-	}
-	
-	return NO;
 }
 
 - (void)resetPlayer
@@ -221,17 +284,16 @@ static const NSString *PlayerItemContext;
 	[self pause];
 }
 
+- (void)closePlayer
+{
+	[avPlayer_ removeTimeObserver:playTimeObserver_];
+}
+
 #pragma mark - VodPlayerDelegate
 
 - (BOOL)readyToPlay
 {
-	BOOL isReadyToPlay = NO;
-	if ((avPlayer_.currentItem != nil) &&
-		([avPlayer_.currentItem status] == AVPlayerItemStatusReadyToPlay)) {
-		isReadyToPlay = YES;
-	}
-	
-	return isReadyToPlay;
+	return ((avPlayer_.currentItem != nil) && ([avPlayer_.currentItem status] == AVPlayerItemStatusReadyToPlay));
 }
 
 - (void)playerItemDidReachEnd:(NSNotification *)notification
@@ -240,6 +302,13 @@ static const NSString *PlayerItemContext;
 	
 	if ([self.delegate respondsToSelector:@selector(didPlayReachEnd)]) {
 		[self.delegate didPlayReachEnd];
+	}
+}
+
+- (void)errorVodPlayer:(VodErrorType)type
+{
+	if ([self.delegate respondsToSelector:@selector(failVodPlayerWithErrorType:)]) {
+		[self.delegate failVodPlayerWithErrorType:type];
 	}
 }
 
@@ -257,20 +326,43 @@ static const NSString *PlayerItemContext;
 		return;
 	}
 	
-	if ([keyPath isEqualToString:@"status"]) {
+	if ([keyPath isEqualToString:KEY_STATUS]) {
 		
-		AVPlayerItemStatus status = AVPlayerItemStatusUnknown;
-		// Get the status change from the change dictionary
 		NSNumber *statusNumber = change[NSKeyValueChangeNewKey];
-		
-		NSLog(@"status : %zd", [statusNumber integerValue]);
 		
 		if ([statusNumber isKindOfClass:[NSNumber class]]) {
 			
-			status = statusNumber.integerValue;
+			/*
+			 * <AVPlayerItemStatus>
+			 * - AVPlayerItemStatusUnknown,
+			 * - AVPlayerItemStatusReadyToPlay,
+			 * - AVPlayerItemStatusFailed
+			 */
+			
+			AVPlayerItemStatus status = [statusNumber integerValue];
 			dispatch_async(dispatch_get_main_queue(),^{
 				if ([self.delegate respondsToSelector:@selector(readyToPlay:duration:)]) {
-					[self.delegate readyToPlay:(status == AVPlayerItemStatusReadyToPlay) duration:CMTimeGetSeconds(avPlayer_.currentItem.duration)];
+					[self.delegate readyToPlay:(status == AVPlayerItemStatusReadyToPlay) duration:[self duration]];
+				}
+			});
+		}
+		
+	} else if ([keyPath isEqualToString:KEY_RATE]) {
+		
+		NSNumber *statusNumber = change[NSKeyValueChangeNewKey];
+		
+		if ([statusNumber isKindOfClass:[NSNumber class]]) {
+			float rate = [statusNumber floatValue];
+			dispatch_async(dispatch_get_main_queue(),^{
+				
+				if ([self.delegate respondsToSelector:@selector(changedPlayStatus:)]) {
+					
+					VodPlayStatus status = VodPlayStatus_Stop;
+					if (rate == 1.0f) {
+						status = VodPlayStatus_Playing;
+					}
+					
+					[self.delegate changedPlayStatus:status];
 				}
 			});
 		}

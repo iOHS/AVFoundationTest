@@ -10,4 +10,6 @@
 
 @interface Util : NSObject
 
++ (NSString *)timeFormatted:(NSInteger)totalSeconds;
+
 @end

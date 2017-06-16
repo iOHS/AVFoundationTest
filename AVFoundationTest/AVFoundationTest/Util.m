@@ -10,4 +10,14 @@
 
 @implementation Util
 
++ (NSString *)timeFormatted:(NSInteger)totalSeconds
+{
+	
+	NSInteger seconds = totalSeconds % 60;
+	NSInteger minutes = (totalSeconds / 60) % 60;
+	NSInteger hours = totalSeconds / 3600;
+	
+	return [NSString stringWithFormat:@"%02zd:%02zd:%02zd", hours, minutes, seconds];
+}
+
 @end

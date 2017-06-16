@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2993CE361EF36B7B00587823 /* Util.m in Sources */ = {isa = PBXBuildFile; fileRef = 2993CE351EF36B7B00587823 /* Util.m */; };
 		299A799D1EE9162E00035B94 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 299A799C1EE9162E00035B94 /* main.m */; };
 		299A79A01EE9162E00035B94 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 299A799F1EE9162E00035B94 /* AppDelegate.m */; };
 		299A79A31EE9162E00035B94 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 299A79A21EE9162E00035B94 /* ViewController.m */; };
@@ -43,6 +44,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		2993CE331EF285A900587823 /* VodPlayerDefine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VodPlayerDefine.h; sourceTree = "<group>"; };
+		2993CE341EF36B7B00587823 /* Util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Util.h; sourceTree = "<group>"; };
+		2993CE351EF36B7B00587823 /* Util.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Util.m; sourceTree = "<group>"; };
 		299A79981EE9162E00035B94 /* AVFoundationTest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AVFoundationTest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		299A799C1EE9162E00035B94 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		299A799E1EE9162E00035B94 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -122,6 +126,8 @@
 				299A799F1EE9162E00035B94 /* AppDelegate.m */,
 				299A79A11EE9162E00035B94 /* ViewController.h */,
 				299A79A21EE9162E00035B94 /* ViewController.m */,
+				2993CE341EF36B7B00587823 /* Util.h */,
+				2993CE351EF36B7B00587823 /* Util.m */,
 				299A79A41EE9162E00035B94 /* Main.storyboard */,
 				299A79A71EE9162E00035B94 /* Assets.xcassets */,
 				299A79A91EE9162E00035B94 /* LaunchScreen.storyboard */,
@@ -161,10 +167,11 @@
 		299A79C91EE93BB800035B94 /* Player */ = {
 			isa = PBXGroup;
 			children = (
-				299A79CC1EE93BB800035B94 /* VodPlayerView.h */,
-				299A79CD1EE93BB800035B94 /* VodPlayerView.m */,
 				299A79CA1EE93BB800035B94 /* VodPlayer.h */,
 				299A79CB1EE93BB800035B94 /* VodPlayer.m */,
+				299A79CC1EE93BB800035B94 /* VodPlayerView.h */,
+				299A79CD1EE93BB800035B94 /* VodPlayerView.m */,
+				2993CE331EF285A900587823 /* VodPlayerDefine.h */,
 			);
 			path = Player;
 			sourceTree = "<group>";
@@ -309,6 +316,7 @@
 				299A79A01EE9162E00035B94 /* AppDelegate.m in Sources */,
 				299A79CF1EE93BB800035B94 /* VodPlayerView.m in Sources */,
 				299A799D1EE9162E00035B94 /* main.m in Sources */,
+				2993CE361EF36B7B00587823 /* Util.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -8,6 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
+#import "VodPlayerDefine.h"
 
 @protocol VodPlayerDelegate;
 
@@ -17,19 +18,34 @@
 @property (nonatomic, copy) NSURL *sampleURL;
 @property (nonatomic, assign) BOOL ispreloadAssetProperty;
 
+@property (nonatomic, assign, readonly) VodPlayStatus playStatus;
+
+// Player Object
 - (AVPlayer *)player;
+
+// Player Control
 - (void)loadPlayer:(void (^)(BOOL isLoadPlayer))result;
 - (void)play;
 - (void)pause;
-- (BOOL)isPlaying;
+- (void)seekToTime:(Float64)seconds;
+
+// AVPlayer does not have a method named stop. You can pause or set rate to 0.0.
+//- (void)stop;
+
+// Player Status
+
+- (Float64)duration;
+- (BOOL)isVodPlaying;
 
 @end
 
 @protocol VodPlayerDelegate <NSObject>
 
 - (void)readyToPlay:(BOOL)isReadyToPlay duration:(Float64)duration;
+- (void)updatePlayTime:(Float64)playTime;
 - (void)didPlayReachEnd;
 
-- (void)updatePlayTime:(Float64)playTime isPlaying:(BOOL)isPlaying;
+- (void)changedPlayStatus:(VodPlayStatus)status;
+- (void)failVodPlayerWithErrorType:(VodErrorType)errorType;
 
 @end
