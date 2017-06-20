@@ -143,7 +143,7 @@
 - (void)updateBufferWithRate:(CGFloat)bufferRate
 {
 	if (self.playSlider != nil) {
-		NSLog(@"%f", bufferRate);
+		NSLog(@"bufferRate : %f", bufferRate);
 	}
 }
 
