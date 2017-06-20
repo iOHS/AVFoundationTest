@@ -27,7 +27,7 @@
 - (void)loadPlayer:(void (^)(BOOL isLoadPlayer))result;
 - (void)play;
 - (void)pause;
-- (void)seekToTime:(Float64)seconds;
+- (void)seekToTime:(Float64)seconds completed:(void (^)(BOOL completed))completed;
 
 // AVPlayer does not have a method named stop. You can pause or set rate to 0.0.
 //- (void)stop;
@@ -42,6 +42,7 @@
 @protocol VodPlayerDelegate <NSObject>
 
 - (void)readyToPlay:(BOOL)isReadyToPlay duration:(Float64)duration;
+- (void)updateBufferWithRate:(CGFloat)bufferRate;
 - (void)updatePlayTime:(Float64)playTime;
 - (void)didPlayReachEnd;
 

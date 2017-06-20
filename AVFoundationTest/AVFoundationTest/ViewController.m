@@ -23,8 +23,10 @@
 @end
 
 @implementation ViewController {
+	
 	VodPlayer *player_;
 	Float64 duration_;
+	BOOL isSeeking_;
 }
 
 - (void)viewDidLoad
@@ -42,6 +44,8 @@
 
 - (void)initPlayer
 {
+	[self resetVodPlayer];
+	
 	player_ = [[VodPlayer alloc] init];
 	player_.delegate = self;
 	
@@ -49,6 +53,8 @@
 		
 		if (isLoadPlayer) {
 			[self.playerView setPlayer:player_.player];
+		} else {
+			NSLog(@"Can't load content..");
 		}
 	}];
 }
@@ -67,9 +73,10 @@
 	
 	[self performSelector:@selector(togglePlayPauseButton) withObject:nil afterDelay:2.0];
 }
+
 - (IBAction)valueChangeSeek:(id)sender
 {
-	
+	isSeeking_ = YES;
 }
 
 - (IBAction)seekCompleteVodPlay:(UISlider *)sender
@@ -78,9 +85,12 @@
 		
 		Float64 duration = [player_ duration];
 		
-		if (duration > 0.0f && [player_ isVodPlaying]) {
+		if (duration > 0.0f) {
+			
 			CGFloat seekPlayTime = sender.value * duration;
-			[player_ seekToTime:seekPlayTime];
+			[player_ seekToTime:seekPlayTime completed:^(BOOL completed) {
+				isSeeking_ = NO;
+			}];
 		}
 	}
 }
@@ -112,7 +122,10 @@
 - (void)resetVodPlayer
 {
 	[self changedPlayPauseButtonStatus:NO];
-	[self.playSlider setValue:0.0f];
+	[player_ seekToTime:0.0f completed:^(BOOL completed) {
+		isSeeking_ = NO;
+	}];
+	
 	[self.currentPlayTime setText:RESET_PLAYTIME_STRING];
 	[self.totalPlayTime setText:RESET_PLAYTIME_STRING];
 }
@@ -127,8 +140,19 @@
 	self.totalPlayTime.text = [Util timeFormatted:duration];
 }
 
+- (void)updateBufferWithRate:(CGFloat)bufferRate
+{
+	if (self.playSlider != nil) {
+		NSLog(@"%f", bufferRate);
+	}
+}
+
 - (void)updatePlayTime:(Float64)playTime
 {
+	if (isSeeking_) {
+		return;
+	}
+	
 	dispatch_async(dispatch_get_main_queue(), ^{
 		
 		if (duration_ > 0) {

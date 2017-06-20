@@ -19,6 +19,7 @@ static const NSString *PlayerItemContext;
 #define KEY_TRACKS				@"tracks"
 #define KEY_RATE				@"rate"
 #define KEY_STATUS				@"status"
+#define KEY_LOADEDTIMERANGES	@"loadedTimeRanges"
 #define KEY_PLAYABLE			@"playable"
 #define KEY_HASPROTECTEDCONTENT @"hasProtectedContent"
 
@@ -110,7 +111,7 @@ static const NSString *PlayerItemContext;
 	}
 }
 
-- (void)seekToTime:(Float64)seconds
+- (void)seekToTime:(Float64)seconds completed:(void (^)(BOOL completed))completed
 {
 	if (avPlayer_ != nil) {
 		
@@ -120,8 +121,7 @@ static const NSString *PlayerItemContext;
 			completionHandler:^(BOOL finished)
 		 {
 			 dispatch_async(dispatch_get_main_queue(), ^{
-				 //				 isSeeking = NO;
-				 //				 // Do some stuff
+				 completed(finished);
 			 });
 		 }];
 	}
@@ -244,8 +244,14 @@ static const NSString *PlayerItemContext;
 					 options:options
 					 context:&PlayerItemContext];
 	
+	[playerItem_ addObserver:self
+				  forKeyPath:KEY_LOADEDTIMERANGES
+					 options:NSKeyValueObservingOptionNew
+					 context:&PlayerItemContext];
+	
 	// Associate the player item with the player
 	avPlayer_ = [AVPlayer playerWithPlayerItem:playerItem_];
+	avPlayer_.actionAtItemEnd = AVPlayerActionAtItemEndPause;
 	
 	if (avPlayer_ == nil) {
 		[self errorVodPlayer:VodErrorType_InitPlayerFail];
@@ -366,7 +372,39 @@ static const NSString *PlayerItemContext;
 				}
 			});
 		}
+		
+	} else if ([keyPath isEqualToString:KEY_LOADEDTIMERANGES]) {
+		
+		NSTimeInterval timeInterval = [self playableDuration];
+		// NSLog(@"Time Interval:%f",timeInterval);
+		CMTime duration = avPlayer_.currentItem.duration;
+		CGFloat totalDuration = CMTimeGetSeconds(duration);
+		CGFloat bufferRate = timeInterval / totalDuration;
+		
+		if ([self.delegate respondsToSelector:@selector(updateBufferWithRate:)]) {
+			[self.delegate updateBufferWithRate:bufferRate];
+		}
 	}
+}
+
+- (NSTimeInterval)playableDuration
+{
+	if (avPlayer_ == nil) {
+		return 0.0f;
+	}
+	
+	if (avPlayer_.currentItem != nil && avPlayer_.currentItem.status == AVPlayerStatusReadyToPlay) {
+		
+		NSArray *loadedTimeRanges = [avPlayer_.currentItem loadedTimeRanges];
+		CMTimeRange timeRange = [loadedTimeRanges.firstObject CMTimeRangeValue];
+		CGFloat startSeconds = CMTimeGetSeconds(timeRange.start);
+		CGFloat durationSeconds = CMTimeGetSeconds(timeRange.duration);
+		NSTimeInterval playableDuration = startSeconds + durationSeconds;
+		return playableDuration;
+	}
+	
+	return 0.0f;
+	
 }
 
 @end
